@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.SharePoint.Client;
-using SP = Microsoft.SharePoint.Client;
 using System.Security;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Packaging;
@@ -20,13 +19,14 @@ namespace SharePointAssessment
     {
         static void Main(string[] args)
         {
-
             string UserName = "harsha.poosarla@acuvate.com";
             Console.WriteLine("Enter your password.");
             SecureString Password = GetPassword();
             using (var ctx = new ClientContext("https://acuvatehyd.sharepoint.com/teams/SharePointDemo1"))
             {
                 ctx.Credentials = new SharePointOnlineCredentials(UserName, Password);
+            }
+        }
                 //File file = ctx.Web.GetFileByServerRelativeUrl("/Shared%20Documents/testdata.xlsx");
                 //ClientResult<System.IO.Stream> data = file.OpenBinaryStream();
                 //ctx.Load(file);
@@ -69,12 +69,10 @@ namespace SharePointAssessment
                 //    List list = ctx.Web.Lists.GetByTitle("Documents");
                 //    var file = list.RootFolder.Files.GetByUrl("SharePointAssessment.xlsx");
                 //    ctx.Load(file);
-
                 //    var listItem = list.GetItemById(1);
                 //    ctx.Load(list);
                 //    ctx.Load(listItem, i => i.File);
                 //    ctx.ExecuteQuery();
-
                 //    var fileRef = listItem.File.ServerRelativeUrl;
                 //    var fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(ctx, fileRef);
                 //    var fileName = Path.Combine("C:\\Users\\epmadmin\\Desktop\\YourFolderName", (string)listItem.File.Name);
@@ -82,60 +80,46 @@ namespace SharePointAssessment
                 //    {
                 //        fileInfo.Stream.CopyTo(fileStream);
                 //    }
-
                 //    Console.WriteLine("found");
                 //    Console.ReadKey();
                 //}
-
                 //private static void ReadFile(string FileURL,string SheetName,string Range)
                 //{
                 //    try
                 //    {
                 //        ExcelServices ObjXl = new ExcelServices();
-
-
                 //    }
-
-            }
-            //    Web web = ctx.Web;
-            //    List list = ctx.Web.Lists.GetByTitle("Documents");
-            //    var file = list.RootFolder.Files.GetByUrl("SharePointAssessment.xlsx");
-            //    ctx.Load(file);
-
-            //    var listItem = list.GetItemById(1);
-            //    ctx.Load(list);
-            //    ctx.Load(listItem, i => i.File);
-            //    ctx.ExecuteQuery();
-
-            //    var fileRef = listItem.File.ServerRelativeUrl;
-            //    var fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(ctx, fileRef);
-            //    var fileName = Path.Combine("C:\\Users\\epmadmin\\Desktop\\YourFolderName", (string)listItem.File.Name);
-            //    using (var fileStream = System.IO.File.Create(fileName))
-            //    {
-            //        fileInfo.Stream.CopyTo(fileStream);
-            //    }
-
-            //    Console.WriteLine("found");
-            //    Console.ReadKey();
-            //}
-
-            //private static void ReadFile(string FileURL,string SheetName,string Range)
-            //{
-            //    try
-            //    {
-            //        ExcelServices ObjXl = new ExcelServices();
-
-
-            //    }
-
-        }
+                //    Web web = ctx.Web;
+                //    List list = ctx.Web.Lists.GetByTitle("Documents");
+                //    var file = list.RootFolder.Files.GetByUrl("SharePointAssessment.xlsx");
+                //    ctx.Load(file);
+                //    var listItem = list.GetItemById(1);
+                //    ctx.Load(list);
+                //    ctx.Load(listItem, i => i.File);
+                //    ctx.ExecuteQuery();
+                //    var fileRef = listItem.File.ServerRelativeUrl;
+                //    var fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(ctx, fileRef);
+                //    var fileName = Path.Combine("C:\\Users\\epmadmin\\Desktop\\YourFolderName", (string)listItem.File.Name);
+                //    using (var fileStream = System.IO.File.Create(fileName))
+                //    {
+                //        fileInfo.Stream.CopyTo(fileStream);
+                //    }
+                //    Console.WriteLine("found");
+                //    Console.ReadKey();
+                //}
+                //private static void ReadFile(string FileURL,string SheetName,string Range)
+                //{
+                //    try
+                //    {
+                //        ExcelServices ObjXl = new ExcelServices();
+                //    }
         private static void ReadFileName(ClientContext clientContext)
         {
             string fileName = string.Empty;
             bool isError = true;
-            const string fldTitle = "SharePointAssessment";
+            const string fldTitle = "Title";
             const string lstDocName = "Documents";
-            const string strFolderServerRelativeUrl = "/sites/dev2/Shared Documents";
+            const string strFolderServerRelativeUrl = "/teams/SharePointDemo1/Shared%20Document";
             string strErrorMsg = string.Empty;
             try
             {
@@ -170,6 +154,7 @@ namespace SharePointAssessment
                 if (isError)
                 {
                     //Logging
+                    Console.ReadKey();
                 }
             }
         }
@@ -237,6 +222,7 @@ namespace SharePointAssessment
                 if (isError)
                 {
                     //Logging
+                    Console.ReadKey();
                 }
             }
         }
@@ -286,6 +272,7 @@ namespace SharePointAssessment
                 if (isError)
                 {
                     //Logging
+                    Console.ReadKey();
                 }
             }
         }
@@ -330,10 +317,11 @@ namespace SharePointAssessment
                 if (isError)
                 {
                     //Logging
+                    Console.ReadKey();
                 }
             }
             return value;
-        }
+        }        
         private static SecureString GetPassword()
         {
             ConsoleKeyInfo info;
@@ -348,6 +336,6 @@ namespace SharePointAssessment
             }
             while (info.Key != ConsoleKey.Enter);
             return SecurePassword;
-        }
-    }
+        }        
+    }   
 }
