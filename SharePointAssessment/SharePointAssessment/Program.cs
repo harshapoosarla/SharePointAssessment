@@ -11,7 +11,9 @@ using System.Data;
 using System.Configuration;
 using System.Net.Mail;
 using Microsoft.SharePoint.Client.Utilities;
+using System.IO;
 //using ExcelServiceTest.XLService;
+
 
 namespace SharePointAssessment
 {
@@ -25,317 +27,93 @@ namespace SharePointAssessment
             using (var ctx = new ClientContext("https://acuvatehyd.sharepoint.com/teams/SharePointDemo1"))
             {
                 ctx.Credentials = new SharePointOnlineCredentials(UserName, Password);
+
+                ExcelPackage(ctx);
             }
         }
-                //File file = ctx.Web.GetFileByServerRelativeUrl("/Shared%20Documents/testdata.xlsx");
-                //ClientResult<System.IO.Stream> data = file.OpenBinaryStream();
-                //ctx.Load(file);
-                //ctx.ExecuteQuery();
-                //using (var pck = new OfficeOpenXml.ExcelPackage())
-                //{
-                //    //using (var stream = File.OpenRead(""))
-                //    //{
-                //    //    pck.Load(stream);
-                //    //}
-                //    using (System.IO.MemoryStream mStream = new System.IO.MemoryStream())
-                //    {
-                //        if (data != null)
-                //        {
-                //            data.Value.CopyTo(mStream);
-                //            pck.Load(mStream);
-                //            var ws = pck.Workbook.Worksheets.First();
-                //            DataTable tbl = new DataTable();
-                //            bool hasHeader = true; // adjust it accordingly( i've mentioned that this is a simple approach)
-                //            foreach (var firstRowCell in ws.Cells[1, 1, 1, ws.Dimension.End.Column])
-                //            {
-                //                tbl.Columns.Add(hasHeader ? firstRowCell.Text : string.Format("Column {0}", firstRowCell.Start.Column));
-                //            }
-                //            var startRow = hasHeader ? 2 : 1;
-                //            for (var rowNum = startRow; rowNum <= ws.Dimension.End.Row; rowNum++)
-                //            {
-                //                var wsRow = ws.Cells[rowNum, 1, rowNum, ws.Dimension.End.Column];
-                //                var row = tbl.NewRow();
-                //                foreach (var cell in wsRow)
-                //                {
-                //                    if (null != cell.Hyperlink)
-                //                        row[cell.Start.Column - 1] = cell.Hyperlink;
-                //                    else
-                //                        row[cell.Start.Column - 1] = cell.Text;
-                //                }
-                //                tbl.Rows.Add(row);
-                //            }
-                //            Console.WriteLine('1');
-                //    Web web = ctx.Web;
-                //    List list = ctx.Web.Lists.GetByTitle("Documents");
-                //    var file = list.RootFolder.Files.GetByUrl("SharePointAssessment.xlsx");
-                //    ctx.Load(file);
-                //    var listItem = list.GetItemById(1);
-                //    ctx.Load(list);
-                //    ctx.Load(listItem, i => i.File);
-                //    ctx.ExecuteQuery();
-                //    var fileRef = listItem.File.ServerRelativeUrl;
-                //    var fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(ctx, fileRef);
-                //    var fileName = Path.Combine("C:\\Users\\epmadmin\\Desktop\\YourFolderName", (string)listItem.File.Name);
-                //    using (var fileStream = System.IO.File.Create(fileName))
-                //    {
-                //        fileInfo.Stream.CopyTo(fileStream);
-                //    }
-                //    Console.WriteLine("found");
-                //    Console.ReadKey();
-                //}
-                //private static void ReadFile(string FileURL,string SheetName,string Range)
-                //{
-                //    try
-                //    {
-                //        ExcelServices ObjXl = new ExcelServices();
-                //    }
-                //    Web web = ctx.Web;
-                //    List list = ctx.Web.Lists.GetByTitle("Documents");
-                //    var file = list.RootFolder.Files.GetByUrl("SharePointAssessment.xlsx");
-                //    ctx.Load(file);
-                //    var listItem = list.GetItemById(1);
-                //    ctx.Load(list);
-                //    ctx.Load(listItem, i => i.File);
-                //    ctx.ExecuteQuery();
-                //    var fileRef = listItem.File.ServerRelativeUrl;
-                //    var fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(ctx, fileRef);
-                //    var fileName = Path.Combine("C:\\Users\\epmadmin\\Desktop\\YourFolderName", (string)listItem.File.Name);
-                //    using (var fileStream = System.IO.File.Create(fileName))
-                //    {
-                //        fileInfo.Stream.CopyTo(fileStream);
-                //    }
-                //    Console.WriteLine("found");
-                //    Console.ReadKey();
-                //}
-                //private static void ReadFile(string FileURL,string SheetName,string Range)
-                //{
-                //    try
-                //    {
-                //        ExcelServices ObjXl = new ExcelServices();
-                //    }
-        private static void ReadFileName(ClientContext clientContext)
+        private static void ExcelPackage(ClientContext ctx)
         {
-            string fileName = string.Empty;
-            bool isError = true;
-            const string fldTitle = "Title";
-            const string lstDocName = "Documents";
-            const string strFolderServerRelativeUrl = "/teams/SharePointDemo1/Shared%20Document";
-            string strErrorMsg = string.Empty;
-            try
+            Microsoft.SharePoint.Client.File file = ctx.Web.GetFileByUrl("https://acuvatehyd.sharepoint.com/:x:/r/teams/SharePointDemo1/_layouts/15/Doc.aspx?sourcedoc=%7Ba5f7bba6-4627-4bfd-82f5-eccb8e7efd8c%7D&action=default&uid=%7BA5F7BBA6-4627-4BFD-82F5-ECCB8E7EFD8C%7D&ListItemId=4&ListId=%7B3411566D-3EE6-4CB3-9DD4-71B1E7E0AAB3%7D&odsp=1&env=prod");
+            ClientResult<System.IO.Stream> data = file.OpenBinaryStream();
+            ctx.Load(file);
+            ctx.ExecuteQuery();
+            using (var pack = new OfficeOpenXml.ExcelPackage())
             {
-                List list = clientContext.Web.Lists.GetByTitle(lstDocName);
-                CamlQuery camlQuery = new CamlQuery();
-                camlQuery.ViewXml = @"<View Scope='Recursive'><Query></Query></View>";
-                camlQuery.FolderServerRelativeUrl = strFolderServerRelativeUrl;
-                ListItemCollection listItems = list.GetItems(camlQuery);
-                clientContext.Load(listItems, items => items.Include(i => i[fldTitle]));
-                clientContext.ExecuteQuery();
-                for (int i = 0; i < listItems.Count; i++)
-                {
-                    ListItem itemOfInterest = listItems[i];
-                    if (itemOfInterest[fldTitle] != null)
-                    {
-                        fileName = itemOfInterest[fldTitle].ToString();
-                        if (i == 0)
-                        {
-                            ReadExcelData(clientContext, itemOfInterest[fldTitle].ToString());
-                        }
-                    }
-                }
-                isError = false;
-            }
-            catch (Exception e)
-            {
-                isError = true;
-                strErrorMsg = e.Message;
-            }
-            finally
-            {
-                if (isError)
-                {
-                    //Logging
-                    Console.ReadKey();
-                }
-            }
-        }
-        private static void ReadExcelData(ClientContext clientContext, string fileName)
-        {
-            bool isError = true;
-            string strErrorMsg = string.Empty;
-            const string lstDocName = "Documents";
-            try
-            {
-                DataTable dataTable = new DataTable("EmployeeExcelDataTable");
-                List list = clientContext.Web.Lists.GetByTitle(lstDocName);
-                clientContext.Load(list.RootFolder);
-                clientContext.ExecuteQuery();
-                string fileServerRelativeUrl = list.RootFolder.ServerRelativeUrl + "/" + fileName;
-                Microsoft.SharePoint.Client.File file = clientContext.Web.GetFileByServerRelativeUrl(fileServerRelativeUrl);
-                ClientResult<System.IO.Stream> data = file.OpenBinaryStream();
-                clientContext.Load(file);
-                clientContext.ExecuteQuery();
-                using (System.IO.MemoryStream mStream = new System.IO.MemoryStream())
+                using (System.IO.MemoryStream memoryStream = new System.IO.MemoryStream())
                 {
                     if (data != null)
                     {
-                        data.Value.CopyTo(mStream);
-                        using (SpreadsheetDocument document = SpreadsheetDocument.Open(mStream, false))
+                        data.Value.CopyTo(memoryStream);
+                        pack.Load(memoryStream);
+                        var worksheet = pack.Workbook.Worksheets.First();
+                        DataTable dataTable = new DataTable();
+                        bool hasHeader = true;
+
+                        foreach (var firstCell in worksheet.Cells[1, 1, 1, worksheet.Dimension.End.Column])
                         {
-                            WorkbookPart workbookPart = document.WorkbookPart;
-                            IEnumerable<Sheet> sheets = document.WorkbookPart.Workbook.GetFirstChild<Sheets>().Elements<Sheet>();
-                            string relationshipId = sheets.First().Id.Value;
-                            WorksheetPart worksheetPart = (WorksheetPart)document.WorkbookPart.GetPartById(relationshipId);
-                            Worksheet workSheet = worksheetPart.Worksheet;
-                            SheetData sheetData = workSheet.GetFirstChild<SheetData>();
-                            IEnumerable<Row> rows = sheetData.Descendants<Row>();
-                            foreach (Cell cell in rows.ElementAt(0))
                             {
-                                string str = GetCellValue(clientContext, document, cell);
-                                dataTable.Columns.Add(str);
+                                var print = dataTable.Columns.Add(hasHeader ? firstCell.Text : string.Format("Column {0}", firstCell.Start.Column));
+                                Console.WriteLine(print);
                             }
-                            foreach (Row row in rows)
+                            var startRow = hasHeader ? 2 : 1;
+                            for (var rowNumber = startRow; rowNumber <= worksheet.Dimension.End.Row; rowNumber++)
                             {
-                                if (row != null)
+                                var WorkSheetRow = worksheet.Cells[rowNumber, 1, rowNumber, worksheet.Dimension.End.Column];
+                                int j = 1;
+
+                                string filetoupload = WorkSheetRow[rowNumber, j].Text;
+
+                                int split = filetoupload.LastIndexOf('.');
+                                string lhs = split < 0 ? filetoupload : filetoupload.Substring(0, split);
+                                string rhs = split < 0 ? "" : filetoupload.Substring(split + 1);
+                                System.IO.FileInfo sizeoffile = new System.IO.FileInfo(filetoupload);
+                                long size = sizeoffile.Length;
+
+                                string deptoffile = WorkSheetRow[rowNumber, 6].Text;
+                                Console.WriteLine(deptoffile);
+                                if (size >= 1000000 && size <= 1.5e+7)
                                 {
-                                    DataRow dataRow = dataTable.NewRow();
-                                    for (int i = 0; i < row.Descendants<Cell>().Count(); i++)
-                                    {
-                                        dataRow[i] = GetCellValue(clientContext, document, row.Descendants<Cell>().ElementAt(i));
-                                    }
-                                    dataTable.Rows.Add(dataRow);
+                                    List documentlibrary = ctx.Web.Lists.GetByTitle("UploadedDocuments");
+                                    var filecreationinfo = new FileCreationInformation();
+                                    filecreationinfo.Content = System.IO.File.ReadAllBytes(filetoupload);
+                                    filecreationinfo.Overwrite = true;
+                                    filecreationinfo.Url = Path.Combine("UploadedDocuments/", Path.GetFileName(filetoupload));
+
+                                    Microsoft.SharePoint.Client.File files = documentlibrary.RootFolder.Files.Add(filecreationinfo);
+                                    ListItem listItem = files.ListItemAllFields;
+                                    listItem["Department"] = deptoffile;
+                                    listItem["FileType"] = rhs;
+                                    listItem.Update();
+
+                                    ctx.Load(files);
+                                    ctx.ExecuteQuery();
+                                    Console.WriteLine("Successfully Uploaded");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Failed to Upload Files");
                                 }
                             }
-                            dataTable.Rows.RemoveAt(0);
                         }
                     }
                 }
-                UpdateSPList(clientContext, dataTable, fileName);
-                isError = false;
-            }
-            catch (Exception e)
-            {
-                isError = true;
-                strErrorMsg = e.Message;
-            }
-            finally
-            {
-                if (isError)
-                {
-                    //Logging
-                    Console.ReadKey();
-                }
+                Console.ReadKey();
             }
         }
-        private static void UpdateSPList(ClientContext clientContext, DataTable dataTable, string fileName)
-        {
-            bool isError = true;
-            string strErrorMsg = string.Empty;
-            Int32 count = 0;
-            const string lstName = "EmployeesData";
-            const string lstColTitle = "Title";
-            const string lstColAddress = "Address";
-            try
+            private static SecureString GetPassword()
             {
-                string fileExtension = ".xlsx";
-                string fileNameWithOutExtension = fileName.Substring(0, fileName.Length - fileExtension.Length);
-                if (fileNameWithOutExtension.Trim() == lstName)
-                {
-                    List oList = clientContext.Web.Lists.GetByTitle(fileNameWithOutExtension);
-                    foreach (DataRow row in dataTable.Rows)
+                    ConsoleKeyInfo info;
+                    SecureString SecurePassword = new SecureString();
+                    do
                     {
-                        ListItemCreationInformation itemCreateInfo = new ListItemCreationInformation();
-                        ListItem oListItem = oList.AddItem(itemCreateInfo);
-                        oListItem[lstColTitle] = row[0];
-                        oListItem[lstColAddress] = row[1];
-                        oListItem.Update();
-                        clientContext.ExecuteQuery();
-                        count++;
-                    }
-                }
-                else
-                {
-                    count = 0;
-                }
-                if (count == 0)
-                {
-                    Console.Write("Error: List: '" + fileNameWithOutExtension + "' is not found in SharePoint.");
-                }
-                isError = false;
-            }
-            catch (Exception e)
-            {
-                isError = true;
-                strErrorMsg = e.Message;
-            }
-            finally
-            {
-                if (isError)
-                {
-                    //Logging
-                    Console.ReadKey();
-                }
-            }
-        }
-        private static string GetCellValue(ClientContext clientContext, SpreadsheetDocument document, Cell cell)
-        {
-            bool isError = true;
-            string strErrorMsg = string.Empty;
-            string value = string.Empty;
-            try
-            {
-                if (cell != null)
-                {
-                    SharedStringTablePart stringTablePart = document.WorkbookPart.SharedStringTablePart;
-                    if (cell.CellValue != null)
-                    {
-                        value = cell.CellValue.InnerXml;
-                        if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
+                        info = Console.ReadKey(true);
+                        if (info.Key != ConsoleKey.Enter)
                         {
-                            if (stringTablePart.SharedStringTable.ChildElements[Int32.Parse(value)] != null)
-                            {
-                                isError = false;
-                                return stringTablePart.SharedStringTable.ChildElements[Int32.Parse(value)].InnerText;
-                            }
-                        }
-                        else
-                        {
-                            isError = false;
-                            return value;
+                            SecurePassword.AppendChar(info.KeyChar);
                         }
                     }
-                }
-                isError = false;
-                return string.Empty;
+                    while (info.Key != ConsoleKey.Enter);
+                    return SecurePassword;
             }
-            catch (Exception e)
-            {
-                isError = true;
-                strErrorMsg = e.Message;
-            }
-            finally
-            {
-                if (isError)
-                {
-                    //Logging
-                    Console.ReadKey();
-                }
-            }
-            return value;
-        }        
-        private static SecureString GetPassword()
-        {
-            ConsoleKeyInfo info;
-            SecureString SecurePassword = new SecureString();
-            do
-            {
-                info = Console.ReadKey(true);
-                if (info.Key != ConsoleKey.Enter)
-                {
-                    SecurePassword.AppendChar(info.KeyChar);
-                }
-            }
-            while (info.Key != ConsoleKey.Enter);
-            return SecurePassword;
-        }        
-    }   
+    }
 }
