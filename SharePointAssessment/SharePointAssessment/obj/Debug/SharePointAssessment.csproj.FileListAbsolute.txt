@@ -64,3 +64,5 @@ D:\harsha853\GitHub\SharePointAssessment\SharePointAssessment\SharePointAssessme
 D:\harsha853\GitHub\SharePointAssessment\SharePointAssessment\SharePointAssessment\obj\Debug\SharePointAssessment.csproj.CopyComplete
 D:\harsha853\GitHub\SharePointAssessment\SharePointAssessment\SharePointAssessment\obj\Debug\SharePointAssessment.exe
 D:\harsha853\GitHub\SharePointAssessment\SharePointAssessment\SharePointAssessment\obj\Debug\SharePointAssessment.pdb
+D:\harsha853\GitHub\SharePointAssessment\SharePointAssessment\SharePointAssessment\bin\Debug\EPPlus.dll
+D:\harsha853\GitHub\SharePointAssessment\SharePointAssessment\SharePointAssessment\bin\Debug\EPPlus.xml

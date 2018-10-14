@@ -1,19 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.SharePoint.Client;
 using System.Security;
-using DocumentFormat.OpenXml.Spreadsheet;
-using DocumentFormat.OpenXml.Packaging;
 using System.Data;
-using System.Configuration;
-using System.Net.Mail;
-using Microsoft.SharePoint.Client.Utilities;
 using System.IO;
-//using ExcelServiceTest.XLService;
-
 
 namespace SharePointAssessment
 {
@@ -68,18 +58,19 @@ namespace SharePointAssessment
                                 string rhs = split < 0 ? "" : filetoupload.Substring(split + 1);
                                 System.IO.FileInfo sizeoffile = new System.IO.FileInfo(filetoupload);
                                 long size = sizeoffile.Length;
-
+                                string filename = sizeoffile.Name;
                                 string deptoffile = WorkSheetRow[rowNumber, 6].Text;
                                 Console.WriteLine(deptoffile);
-                                if (size >= 1000000 && size <= 1.5e+7)
+                                if ( size <= 1.5e+7)
                                 {
                                     List documentlibrary = ctx.Web.Lists.GetByTitle("UploadedDocuments");
                                     var filecreationinfo = new FileCreationInformation();
                                     filecreationinfo.Content = System.IO.File.ReadAllBytes(filetoupload);
                                     filecreationinfo.Overwrite = true;
-                                    filecreationinfo.Url = Path.Combine("UploadedDocuments/", Path.GetFileName(filetoupload));
+                                    filecreationinfo.Url =filename;
 
                                     Microsoft.SharePoint.Client.File files = documentlibrary.RootFolder.Files.Add(filecreationinfo);
+                                    ctx.ExecuteQuery();
                                     ListItem listItem = files.ListItemAllFields;
                                     listItem["Department"] = deptoffile;
                                     listItem["FileType"] = rhs;
