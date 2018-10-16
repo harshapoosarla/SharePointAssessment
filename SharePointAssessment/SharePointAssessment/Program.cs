@@ -1,14 +1,8 @@
 using System;
-using System.Linq;
 using Microsoft.SharePoint.Client;
 using System.Security;
-using System.Data;
 using System.IO;
 using Excel = Microsoft.Office.Interop.Excel;
-using DocumentFormat.OpenXml.Spreadsheet;
-using DocumentFormat.OpenXml.Packaging;
-using Microsoft.SharePoint.Client.Utilities;
-
 namespace SharePointAssessment
 {
     class Program
@@ -22,22 +16,19 @@ namespace SharePointAssessment
 
             Console.WriteLine("Enter Password:");
             SecureString Password = GetPassword();
-            using (var ctx = new ClientContext("https://acuvatehyd.sharepoint.com/teams/SharePointDemo1"))
+            using (var Context = new ClientContext("https://acuvatehyd.sharepoint.com/teams/SharePointDemo1"))
             {
-                ctx.Credentials = new SharePointOnlineCredentials(UserName, Password);
+                Context.Credentials = new SharePointOnlineCredentials(UserName, Password);
 
                 //ExcelPackage(ctx);
-                ReadExcelFile(ctx);
-                ReadData(ctx);
-                UploadExcelSheet(ctx);
+                ReadExcelFile(Context);
+                ReadData(Context);
+                UploadExcelSheet(Context);
                 
-
             }
         }
-        public static void ReadData(ClientContext ctx)
+        public static void ReadData(ClientContext Context)
         {
-
-
             Excel.Application ExcelApp;
             Excel.Workbook ExcelWorkBook;
             Excel.Worksheet ExcelWorkSheet;
@@ -52,11 +43,11 @@ namespace SharePointAssessment
             string UploadStatus;
             for (int row = 2; row < 8; row++)
             {
-
                 string FilePath = (ExcelRange.Cells[row, 1] as Excel.Range).Value2;
                 string status = (ExcelRange.Cells[row, 2] as Excel.Range).Value2;
                 string CreatedBy = (ExcelRange.Cells[row, 3] as Excel.Range).Value2;
-                AddFilesFromExcel(ctx, FilePath, CreatedBy, status, out Reason);
+                string Department = (ExcelRange.Cells[row,6]as Excel.Range).Value2;
+                AddFilesFromExcel(Context, FilePath, CreatedBy, status, Department, out Reason);
                 UploadStatus = String.IsNullOrEmpty(Reason) ? "File Uploaded Successfully" : "Failed to Upload File";
                 ExcelRange.Cells[row, 4] = UploadStatus;
                 ExcelRange.Cells[row, 5] = Reason;
@@ -65,17 +56,27 @@ namespace SharePointAssessment
             ExcelWorkBook.Close();
             ExcelApp.Quit();
         }
-        public static string AddFilesFromExcel(ClientContext ctx, string FilepathString, string CreatedBy, string Status, out string Reason)
+        public static string AddFilesFromExcel(ClientContext Context, string FilepathString, string CreatedBy, string Status,string Department, out string Reason)
         {
-            string[] farr = FilepathString.Split('/');
-            string FileNameForURL = farr[farr.Length - 1];
+            List DeptList = Context.Web.Lists.GetByTitle("Department");
+            Context.Load(DeptList);
+            Context.ExecuteQuery();
+
+            CamlQuery camlQuery = new CamlQuery();
+            camlQuery.ViewXml = "<View><Query><Where><Eq><FieldRef Name ='_x0062_zf9'/><Value Type='Text'>" + Department + "</Value></Eq></Where></Query><RowLimit></RowLimit></View>";
+            ListItemCollection DepartmentListItems = DeptList.GetItems(camlQuery);
+            Context.Load(DepartmentListItems);
+            Context.ExecuteQuery();
+
+            string[] array = FilepathString.Split('/');
+            string FileNameForURL = array[array.Length - 1];
             FileInfo fileInfo = new FileInfo(FilepathString);
             long filesize = fileInfo.Length;
             if (filesize <= 1.5e+7)
             {
                 try
                 {
-                    List list = ctx.Web.Lists.GetByTitle("DemoLib");
+                    List list = Context.Web.Lists.GetByTitle("DemoLib");
 
                     FileCreationInformation fileToUpload = new FileCreationInformation();
 
@@ -83,20 +84,23 @@ namespace SharePointAssessment
                     fileToUpload.Overwrite = true;
                     fileToUpload.Url = "DemoLib/" + FileNameForURL;
                     Microsoft.SharePoint.Client.File uploadfile = list.RootFolder.Files.Add(fileToUpload);
-                    farr = Status.Split(',');
+                    array = Status.Split(',');
                     ListItem fileitem = uploadfile.ListItemAllFields;
-                    fileitem["Name"] = FileNameForURL;
-                    fileitem["UploadStatus"] = farr;
+                    fileitem["FileLeafRef"] = FileNameForURL;
+                    fileitem["UploadStatus"] = array;
                     fileitem["FileType"] = fileInfo.Extension;
                     fileitem["CreatedBy"] = CreatedBy;
+
+                    fileitem["Department"] = DepartmentListItems[0].Id;
+
                     fileitem.Update();
-                    ctx.ExecuteQuery();
+                    Context.ExecuteQuery();
                     Reason = "";
                     return Reason;
                 }
-                catch (Exception ex)
+                catch (Exception E)
                 {
-                    return Reason = ex.Message;
+                    return Reason = E.Message;
                 }
             }
             else
@@ -104,27 +108,27 @@ namespace SharePointAssessment
                 return Reason = FileNameForURL + " file size exceeds the specified limit";
             }
         }
-        public static void UploadExcelSheet(ClientContext ctx)
+        public static void UploadExcelSheet(ClientContext Context)
         {
-            List DestList = ctx.Web.Lists.GetByTitle("DemoLib");
+            List DestList = Context.Web.Lists.GetByTitle("DemoLib");
             FileCreationInformation fileCreationInformation = new FileCreationInformation();
             fileCreationInformation.Content = System.IO.File.ReadAllBytes(@"D:\harsha853\SharePointAssessment.xlsx");
             fileCreationInformation.Overwrite = true;
             fileCreationInformation.Url = "DemoLib/SharePointAssessment.xlsx";
             Microsoft.SharePoint.Client.File uploadfile = DestList.RootFolder.Files.Add(fileCreationInformation);
             uploadfile.Update();
-            ctx.ExecuteQuery();
+            Context.ExecuteQuery();
         }
-        public static void ReadExcelFile(ClientContext ctx)
+        public static void ReadExcelFile(ClientContext Context)
         {
-            var list = ctx.Web.Lists.GetByTitle("DemoLib");
+            var list = Context.Web.Lists.GetByTitle("DemoLib");
             var listItem = list.GetItemById(13);
-            ctx.Load(list);
-            ctx.Load(listItem, i => i.File);
-            ctx.ExecuteQuery();
+            Context.Load(list);
+            Context.Load(listItem, i => i.File);
+            Context.ExecuteQuery();
 
             var fileRef = listItem.File.ServerRelativeUrl;
-            var fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(ctx, fileRef);
+            var fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(Context, fileRef);
             var fileName = System.IO.Path.Combine(@"D:\harsha853", (string)listItem.File.Name);
             using (var fileStream = System.IO.File.Create(fileName))
             {
