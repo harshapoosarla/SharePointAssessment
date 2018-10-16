@@ -3,6 +3,7 @@ using Microsoft.SharePoint.Client;
 using System.Security;
 using System.IO;
 using Excel = Microsoft.Office.Interop.Excel;
+
 namespace SharePointAssessment
 {
     class Program
@@ -11,23 +12,19 @@ namespace SharePointAssessment
         {
             Console.WriteLine("Enter UserName:");
             string UserName= Console.ReadLine();
-
             //string UserName = "harsha.poosarla@acuvate.com";
-
             Console.WriteLine("Enter Password:");
             SecureString Password = GetPassword();
             using (var Context = new ClientContext("https://acuvatehyd.sharepoint.com/teams/SharePointDemo1"))
             {
                 Context.Credentials = new SharePointOnlineCredentials(UserName, Password);
-
                 //ExcelPackage(ctx);
-                ReadExcelFile(Context);
+                ReadFile(Context);
                 ReadData(Context);
-                UploadExcelSheet(Context);
-                
+                UploadFile(Context);
             }
         }
-        public static void ReadData(ClientContext Context)
+        public static void ReadData(ClientContext context)
         {
             Excel.Application ExcelApp;
             Excel.Workbook ExcelWorkBook;
@@ -37,102 +34,105 @@ namespace SharePointAssessment
             ExcelApp = new Excel.Application();
             ExcelWorkBook = ExcelApp.Workbooks.Open(@"D:\harsha853\SharePointAssessment.xlsx");
             ExcelWorkSheet = (Excel.Worksheet)ExcelWorkBook.Worksheets.get_Item(1);
+            int MaximumRows = ExcelWorkSheet.UsedRange.Rows.Count;
+            int MaximumColumns = ExcelWorkSheet.UsedRange.Columns.Count;
 
             ExcelRange = ExcelWorkSheet.UsedRange;
             string Reason;
             string UploadStatus;
-            for (int row = 2; row < 8; row++)
+            for (int Row = 2; Row < MaximumRows; Row++)
             {
-                string FilePath = (ExcelRange.Cells[row, 1] as Excel.Range).Value2;
-                string status = (ExcelRange.Cells[row, 2] as Excel.Range).Value2;
-                string CreatedBy = (ExcelRange.Cells[row, 3] as Excel.Range).Value2;
-                string Department = (ExcelRange.Cells[row,6]as Excel.Range).Value2;
-                AddFilesFromExcel(Context, FilePath, CreatedBy, status, Department, out Reason);
+                string FilePath = (ExcelRange.Cells[Row, 1] as Excel.Range).Value2;
+                string Status = (ExcelRange.Cells[Row, 2] as Excel.Range).Value2;
+                string CreatedBy = (ExcelRange.Cells[Row, 3] as Excel.Range).Value2;
+                string Department = (ExcelRange.Cells[Row,6]as Excel.Range).Value2;
+                AddFilesFromExcel(context, FilePath, CreatedBy, Status, Department, out Reason);
                 UploadStatus = String.IsNullOrEmpty(Reason) ? "File Uploaded Successfully" : "Failed to Upload File";
-                ExcelRange.Cells[row, 4] = UploadStatus;
-                ExcelRange.Cells[row, 5] = Reason;
+                ExcelRange.Cells[Row, 4] = UploadStatus;
+                ExcelRange.Cells[Row, 5] = Reason;
             }
             ExcelWorkBook.Save();
             ExcelWorkBook.Close();
             ExcelApp.Quit();
         }
-        public static string AddFilesFromExcel(ClientContext Context, string FilepathString, string CreatedBy, string Status,string Department, out string Reason)
+        public static string AddFilesFromExcel(ClientContext context, string filepathstring, string createdby, string status,string department, out string reason)
         {
-            List DeptList = Context.Web.Lists.GetByTitle("Department");
-            Context.Load(DeptList);
-            Context.ExecuteQuery();
+            List DepartmentList = context.Web.Lists.GetByTitle("Department");
+            context.Load(DepartmentList);
+            context.ExecuteQuery();
 
-            CamlQuery camlQuery = new CamlQuery();
-            camlQuery.ViewXml = "<View><Query><Where><Eq><FieldRef Name ='_x0062_zf9'/><Value Type='Text'>" + Department + "</Value></Eq></Where></Query><RowLimit></RowLimit></View>";
-            ListItemCollection DepartmentListItems = DeptList.GetItems(camlQuery);
-            Context.Load(DepartmentListItems);
-            Context.ExecuteQuery();
+            CamlQuery CamlQuery = new CamlQuery();
+            CamlQuery.ViewXml = "<View><Query><Where><Eq><FieldRef Name ='_x0062_zf9'/><Value Type='Text'>" + department + "</Value></Eq></Where></Query><RowLimit></RowLimit></View>";
+            ListItemCollection DepartmentListItems = DepartmentList.GetItems(CamlQuery);
+            context.Load(DepartmentListItems);
+            context.ExecuteQuery();
 
-            string[] array = FilepathString.Split('/');
-            string FileNameForURL = array[array.Length - 1];
-            FileInfo fileInfo = new FileInfo(FilepathString);
-            long filesize = fileInfo.Length;
-            if (filesize <= 1.5e+7)
+            string[] Array = filepathstring.Split('/');
+            string FileNameForURL = Array[Array.Length - 1];
+            FileInfo FileInfo = new FileInfo(filepathstring);
+            long Filesize = FileInfo.Length;
+            if (Filesize <= 1.5e+7)
             {
                 try
                 {
-                    List list = Context.Web.Lists.GetByTitle("DemoLib");
+                    List List = context.Web.Lists.GetByTitle("DemoLib");
 
-                    FileCreationInformation fileToUpload = new FileCreationInformation();
+                    FileCreationInformation FileToUpload = new FileCreationInformation();
 
-                    fileToUpload.Content = System.IO.File.ReadAllBytes(FilepathString);
-                    fileToUpload.Overwrite = true;
-                    fileToUpload.Url = "DemoLib/" + FileNameForURL;
-                    Microsoft.SharePoint.Client.File uploadfile = list.RootFolder.Files.Add(fileToUpload);
-                    array = Status.Split(',');
-                    ListItem fileitem = uploadfile.ListItemAllFields;
-                    fileitem["FileLeafRef"] = FileNameForURL;
-                    fileitem["UploadStatus"] = array;
-                    fileitem["FileType"] = fileInfo.Extension;
-                    fileitem["CreatedBy"] = CreatedBy;
+                    FileToUpload.Content = System.IO.File.ReadAllBytes(filepathstring);
+                    FileToUpload.Overwrite = true;
+                    FileToUpload.Url = "DemoLib/" + FileNameForURL;
+                    Microsoft.SharePoint.Client.File uploadfile = List.RootFolder.Files.Add(FileToUpload);
+                    Array = status.Split(',');
+                    ListItem FileItem = uploadfile.ListItemAllFields;
+                    FileItem["FileLeafRef"] = FileNameForURL;
+                    FileItem["UploadStatus"] = Array;
+                    FileItem["FileType"] = FileInfo.Extension;
+                    FileItem["CreatedBy"] = createdby;
 
-                    fileitem["Department"] = DepartmentListItems[0].Id;
+                    FileItem["Department"] = DepartmentListItems[0].Id;
 
-                    fileitem.Update();
-                    Context.ExecuteQuery();
-                    Reason = "";
-                    return Reason;
+                    FileItem.Update();
+                    context.ExecuteQuery();
+                    reason = "";
+                    return reason;
                 }
-                catch (Exception E)
+                catch (Exception e)
                 {
-                    return Reason = E.Message;
+                    ErrorLog.Errorlog(e);
+                    return reason = e.Message;
                 }
             }
             else
             {
-                return Reason = FileNameForURL + " file size exceeds the specified limit";
+                return reason = FileNameForURL + " file size exceeds the specified limit";
             }
         }
-        public static void UploadExcelSheet(ClientContext Context)
+        public static void UploadFile(ClientContext context)
         {
-            List DestList = Context.Web.Lists.GetByTitle("DemoLib");
-            FileCreationInformation fileCreationInformation = new FileCreationInformation();
-            fileCreationInformation.Content = System.IO.File.ReadAllBytes(@"D:\harsha853\SharePointAssessment.xlsx");
-            fileCreationInformation.Overwrite = true;
-            fileCreationInformation.Url = "DemoLib/SharePointAssessment.xlsx";
-            Microsoft.SharePoint.Client.File uploadfile = DestList.RootFolder.Files.Add(fileCreationInformation);
+            List DestList = context.Web.Lists.GetByTitle("DemoLib");
+            FileCreationInformation FileCreationInformation = new FileCreationInformation();
+            FileCreationInformation.Content = System.IO.File.ReadAllBytes(@"D:\harsha853\SharePointAssessment.xlsx");
+            FileCreationInformation.Overwrite = true;
+            FileCreationInformation.Url = "DemoLib/SharePointAssessment.xlsx";
+            Microsoft.SharePoint.Client.File uploadfile = DestList.RootFolder.Files.Add(FileCreationInformation);
             uploadfile.Update();
-            Context.ExecuteQuery();
+            context.ExecuteQuery();
         }
-        public static void ReadExcelFile(ClientContext Context)
+        public static void ReadFile(ClientContext context)
         {
-            var list = Context.Web.Lists.GetByTitle("DemoLib");
-            var listItem = list.GetItemById(13);
-            Context.Load(list);
-            Context.Load(listItem, i => i.File);
-            Context.ExecuteQuery();
+            var List = context.Web.Lists.GetByTitle("DemoLib");
+            var ListItem = List.GetItemById(13);
+            context.Load(List);
+            context.Load(ListItem, i => i.File);
+            context.ExecuteQuery();
 
-            var fileRef = listItem.File.ServerRelativeUrl;
-            var fileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(Context, fileRef);
-            var fileName = System.IO.Path.Combine(@"D:\harsha853", (string)listItem.File.Name);
-            using (var fileStream = System.IO.File.Create(fileName))
+            var FileRef = ListItem.File.ServerRelativeUrl;
+            var FileInfo = Microsoft.SharePoint.Client.File.OpenBinaryDirect(context, FileRef);
+            var FileName = System.IO.Path.Combine(@"D:\harsha853", (string)ListItem.File.Name);
+            using (var FileStream = System.IO.File.Create(FileName))
             {
-                fileInfo.Stream.CopyTo(fileStream);
+                FileInfo.Stream.CopyTo(FileStream);
             }
         }
         //    private static void ExcelPackage(ClientContext ctx)
